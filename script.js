@@ -1,5 +1,3 @@
-const SKILLS = ["java", "python", "javascript", "sql", "aws", "react", "node"];
-
 const resumeInput = document.getElementById("resumeInput");
 const jobInput = document.getElementById("jobInput");
 const analyzeBtn = document.getElementById("analyzeBtn");
@@ -12,62 +10,10 @@ const missingSkillsEl = document.getElementById("missingSkills");
 const suggestionsEl = document.getElementById("suggestions");
 const highlightedResumeEl = document.getElementById("highlightedResume");
 
-function processText(text) {
-    return text
-        .toLowerCase()
-        .replace(/[^\w\s]/g, "")
-        .split(/\s+/)
-        .filter((word) => word.length > 0);
-}
-
-function findMatchedSkills(words) {
-    return SKILLS.filter((skill) => words.includes(skill));
-}
-
-function calculateMatchScore(matchedCount) {
-    return Math.round((matchedCount / SKILLS.length) * 100);
-}
-
 function getProgressColor(score) {
     if (score < 40) return "var(--red)";
     if (score <= 70) return "var(--yellow)";
     return "var(--green)";
-}
-
-function generateSuggestions(matched, missing, score) {
-    const suggestions = [];
-
-    if (missing.length > 0) {
-        suggestions.push(
-            `Add the following skills to your resume: ${missing.join(", ")}`
-        );
-    }
-
-    if (score < 40) {
-        suggestions.push(
-            "Your resume has low alignment with this job. Consider tailoring it more closely to the job description."
-        );
-    } else if (score < 70) {
-        suggestions.push(
-            "Good start! Add more relevant keywords from the job description to improve your match."
-        );
-    } else {
-        suggestions.push(
-            "Great match! Your resume aligns well with the job requirements."
-        );
-    }
-
-    if (matched.length === 0) {
-        suggestions.push(
-            "No predefined skills were detected. Make sure to explicitly list your technical skills."
-        );
-    }
-
-    suggestions.push(
-        "Use quantifiable achievements (e.g., 'Improved performance by 30%') to strengthen your resume."
-    );
-
-    return suggestions;
 }
 
 function highlightMatchedWords(text, matchedSkills) {
@@ -96,24 +42,22 @@ function populateList(element, items) {
     });
 }
 
-function displayResults(matched, missing, score, resumeText) {
-    matchScoreEl.textContent = `${score}%`;
+function displayResults(data, resumeText) {
+    matchScoreEl.textContent = `${data.matchScore}%`;
 
-    progressBar.style.width = `${score}%`;
-    progressBar.style.backgroundColor = getProgressColor(score);
+    progressBar.style.width = `${data.matchScore}%`;
+    progressBar.style.backgroundColor = getProgressColor(data.matchScore);
 
-    populateList(detectedSkillsEl, matched);
-    populateList(missingSkillsEl, missing);
+    populateList(detectedSkillsEl, data.matchedSkills);
+    populateList(missingSkillsEl, data.missingSkills);
+    populateList(suggestionsEl, data.suggestions);
 
-    const suggestions = generateSuggestions(matched, missing, score);
-    populateList(suggestionsEl, suggestions);
-
-    highlightedResumeEl.innerHTML = highlightMatchedWords(resumeText, matched);
+    highlightedResumeEl.innerHTML = highlightMatchedWords(resumeText, data.matchedSkills);
 
     resultsSection.classList.remove("hidden");
 }
 
-function analyze() {
+async function analyze() {
     const resumeText = resumeInput.value.trim();
     const jobText = jobInput.value.trim();
 
@@ -126,12 +70,35 @@ function analyze() {
         return;
     }
 
-    const resumeWords = processText(resumeText);
-    const matched = findMatchedSkills(resumeWords);
-    const missing = SKILLS.filter((skill) => !matched.includes(skill));
-    const score = calculateMatchScore(matched.length);
+    analyzeBtn.textContent = "Analyzing...";
+    analyzeBtn.disabled = true;
 
-    displayResults(matched, missing, score, resumeText);
+    try {
+        const response = await fetch("http://localhost:3000/analyze", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                resume: resumeText,
+                jobDescription: jobText
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Analysis failed");
+        }
+
+        displayResults(data, resumeText);
+    } catch (error) {
+        errorMsg.textContent = error.message;
+        errorMsg.classList.remove("hidden");
+    } finally {
+        analyzeBtn.textContent = "Analyze Resume";
+        analyzeBtn.disabled = false;
+    }
 }
 
 analyzeBtn.addEventListener("click", analyze);
