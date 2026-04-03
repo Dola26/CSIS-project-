@@ -1,4 +1,4 @@
-# AI Resume Analyzer
+# Resume Analyzer
 
 A responsive web application that analyzes a user's resume against a job description and displays insights visually.
 
