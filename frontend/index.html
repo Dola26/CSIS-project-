@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Analyzer</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <h1>Resume Analyzer</h1>
         <p>Compare your resume against job descriptions instantly</p>
+        <button id="savedBtn" class="saved-toggle-btn">Saved Analyses</button>
     </header>
 
     <main class="container">
@@ -25,6 +27,15 @@
 
             <button id="analyzeBtn">Analyze Resume</button>
             <p id="errorMsg" class="error hidden"></p>
+        </section>
+
+        <section id="savedSection" class="card saved-section hidden">
+            <div class="saved-header">
+                <h2>Saved Analyses</h2>
+                <button id="refreshBtn" class="refresh-btn">Refresh</button>
+            </div>
+            <p id="savedError" class="error hidden"></p>
+            <div id="savedList" class="saved-list"></div>
         </section>
 
         <section id="resultsSection" class="card results-section hidden">
